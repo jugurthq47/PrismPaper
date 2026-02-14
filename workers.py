@@ -6,18 +6,17 @@ import psutil
 from PyQt6.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition
 from core import dominant_color, classify_color
 
-
 # --------------------- PROCESS WORKER ---------------------
 def process_file_worker(args):
+    """Runs in a separate process"""
     input_dir, output_dir, copy_mode, target_colors, filename, accuracy_settings = args
     src = os.path.join(input_dir, filename)
 
-    # Pass accuracy settings into dominant_color
     try:
         color = dominant_color(src, **(accuracy_settings or {}))
     except TypeError:
-        # older signature fallback
         color = dominant_color(src)
+
     folder_name = classify_color(color)
 
     if "All Colors" not in target_colors and folder_name not in target_colors:
@@ -46,10 +45,9 @@ def auto_low_power_mode():
         return True
     if ram_gb <= 4:
         return True
-    if psutil.sensors_battery():
-        battery = psutil.sensors_battery()
-        if battery and not battery.power_plugged:
-            return True
+    battery = psutil.sensors_battery()
+    if battery and not battery.power_plugged:
+        return True
 
     return False
 
@@ -61,20 +59,28 @@ class SortWorker(QThread):
     finished = pyqtSignal()
     status_msg = pyqtSignal(str)
 
-    def __init__(self, input_dir, output_dir, copy_mode, files_list, target_colors, low_power_mode=None, accuracy_settings=None):
+    def __init__(
+        self,
+        input_dir,
+        output_dir,
+        copy_mode,
+        files_list,
+        target_colors,
+        low_power_mode=None,
+        accuracy_settings=None,
+    ):
         super().__init__()
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.copy_mode = copy_mode
         self.files_list = files_list
         self.target_colors = target_colors
-        # If low_power_mode is None, auto-detect
-        if low_power_mode is None:
-            self.low_power_mode = auto_low_power_mode()
-        else:
-            self.low_power_mode = low_power_mode
 
-        # Accuracy settings dict passed to dominant_color
+        # Auto-detect low-power if not explicitly set
+        self.low_power_mode = (
+            auto_low_power_mode() if low_power_mode is None else low_power_mode
+        )
+
         self.accuracy_settings = accuracy_settings or {}
 
         self._running = True
@@ -115,10 +121,13 @@ class SortWorker(QThread):
             self.finished.emit()
             return
 
-        # Adaptive workers
         cpu_count = multiprocessing.cpu_count()
         max_workers = 1 if self.low_power_mode else max(1, min(cpu_count - 1, 4))
         chunk_size = 10 if self.low_power_mode else 25
+
+        self.status_msg.emit(
+            f"Mode: {'Low Power' if self.low_power_mode else 'Performance'} | Workers: {max_workers}"
+        )
 
         args_iter = (
             (self.input_dir, self.output_dir, self.copy_mode, self.target_colors, f, self.accuracy_settings)
@@ -138,9 +147,9 @@ class SortWorker(QThread):
                         processed += self._process_futures(futures, total, processed)
                         futures.clear()
 
-                # Final batch
+                # Process any remaining futures
                 if futures:
-                    self._process_futures(futures, total, processed)
+                    processed += self._process_futures(futures, total, processed)
 
         except Exception as e:
             self.status_msg.emit(f"Worker error: {e}")
@@ -149,6 +158,7 @@ class SortWorker(QThread):
 
     # ---------- HELPER ----------
     def _process_futures(self, futures, total, processed):
+        processed_count = 0
         for future in concurrent.futures.as_completed(futures):
             if not self._running:
                 break
@@ -161,7 +171,14 @@ class SortWorker(QThread):
                 success = False
 
             processed += 1
+            processed_count += 1
             self.progress.emit(int(processed / total * 100))
             self.counter_update.emit(processed, total)
 
-        return processed - (processed - len(futures))
+        return processed_count
+
+
+# --------------------- PYINSTALLER FREEZE SUPPORT ---------------------
+# In your main script, add:
+# if __name__ == "__main__":
+#     multiprocessing.freeze_support()
