@@ -73,9 +73,11 @@ class PrismPaperGUI(QWidget):
         settings_layout.addWidget(self.accuracy_combo)
         settings_layout.addStretch()
 
+        color_label = QLabel("Colors:")
         self.color_btn = QPushButton("All Colors")
         self.color_btn.setFixedWidth(120)
-        
+
+        settings_layout.addWidget(color_label)
         self.color_menu = StayOpenMenu(self)
         self.setup_color_menu()
         self.color_btn.setMenu(self.color_menu)
@@ -173,8 +175,9 @@ class PrismPaperGUI(QWidget):
             QMenu::item:selected { background-color: #3a86ff; }
         """)
         self.color_btn.setStyleSheet("""
-            QPushButton { background-color: #333; color: #f0f0f0; border: 1px solid #444; border-radius: 5px; padding: 5px; padding-left: 10px; text-align: left; }
+            QPushButton { background-color: #333; color: #f0f0f0; border: 1px solid #444; border-radius: 6px; padding: 5px 10px; font-size: 10pt; }
             QPushButton::menu-indicator { image: none; }
+            QPushButton:hover { background-color: #444; border: 1px solid #555; }
         """)
         self.status_label.setStyleSheet("color: #aaa; font-size: 10pt; margin-top: 5px; font-weight: bold;")
         self.stats_label.setStyleSheet("color: #777; font-size: 9pt; margin-top: 2px;")
