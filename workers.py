@@ -9,10 +9,15 @@ from core import dominant_color, classify_color
 
 # --------------------- PROCESS WORKER ---------------------
 def process_file_worker(args):
-    input_dir, output_dir, copy_mode, target_colors, filename = args
+    input_dir, output_dir, copy_mode, target_colors, filename, accuracy_settings = args
     src = os.path.join(input_dir, filename)
 
-    color = dominant_color(src)
+    # Pass accuracy settings into dominant_color
+    try:
+        color = dominant_color(src, **(accuracy_settings or {}))
+    except TypeError:
+        # older signature fallback
+        color = dominant_color(src)
     folder_name = classify_color(color)
 
     if "All Colors" not in target_colors and folder_name not in target_colors:
@@ -56,7 +61,7 @@ class SortWorker(QThread):
     finished = pyqtSignal()
     status_msg = pyqtSignal(str)
 
-    def __init__(self, input_dir, output_dir, copy_mode, files_list, target_colors, low_power_mode=None):
+    def __init__(self, input_dir, output_dir, copy_mode, files_list, target_colors, low_power_mode=None, accuracy_settings=None):
         super().__init__()
         self.input_dir = input_dir
         self.output_dir = output_dir
@@ -68,6 +73,9 @@ class SortWorker(QThread):
             self.low_power_mode = auto_low_power_mode()
         else:
             self.low_power_mode = low_power_mode
+
+        # Accuracy settings dict passed to dominant_color
+        self.accuracy_settings = accuracy_settings or {}
 
         self._running = True
         self._paused = False
@@ -113,7 +121,7 @@ class SortWorker(QThread):
         chunk_size = 10 if self.low_power_mode else 25
 
         args_iter = (
-            (self.input_dir, self.output_dir, self.copy_mode, self.target_colors, f)
+            (self.input_dir, self.output_dir, self.copy_mode, self.target_colors, f, self.accuracy_settings)
             for f in self.files_list
         )
 
