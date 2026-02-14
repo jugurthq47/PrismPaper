@@ -63,6 +63,14 @@ class PrismPaperGUI(QWidget):
         self.mode_combo.setToolTip("Auto: Detects based on system resources\nPerformance: Maximum speed\nLow Power: Minimal resource usage")
         settings_layout.addWidget(mode_label)
         settings_layout.addWidget(self.mode_combo)
+
+        # Accuracy selector (affects sample size / clustering parameters)
+        acc_label = QLabel("Accuracy:")
+        self.accuracy_combo = QComboBox()
+        self.accuracy_combo.addItems(["Normal", "High", "Low"])
+        self.accuracy_combo.setToolTip("Normal: balanced speed/accuracy\nHigh: better accuracy, slower\nLow: faster, less accurate")
+        settings_layout.addWidget(acc_label)
+        settings_layout.addWidget(self.accuracy_combo)
         settings_layout.addStretch()
 
         self.color_btn = QPushButton("All Colors")
@@ -282,8 +290,17 @@ class PrismPaperGUI(QWidget):
             low_power = True
         else:
             low_power = False
-        
-        self.worker = SortWorker(self.input_dir, self.output_dir, copy_mode, files_list, target_colors, low_power_mode=low_power)
+
+        # Build accuracy settings from dropdown
+        acc = self.accuracy_combo.currentText() if hasattr(self, 'accuracy_combo') else 'Normal'
+        if acc == 'High':
+            accuracy_settings = { 'sample_size': 100, 'n_clusters': 5, 'n_init': 3, 'max_iter': 200, 's_threshold': 0.20, 'v_threshold': 0.20 }
+        elif acc == 'Low':
+            accuracy_settings = { 'sample_size': 30, 'n_clusters': 2, 'n_init': 1, 'max_iter': 50, 's_threshold': 0.15, 'v_threshold': 0.15 }
+        else:
+            accuracy_settings = { 'sample_size': 50, 'n_clusters': 3, 'n_init': 1, 'max_iter': 100, 's_threshold': 0.25, 'v_threshold': 0.25 }
+
+        self.worker = SortWorker(self.input_dir, self.output_dir, copy_mode, files_list, target_colors, low_power_mode=low_power, accuracy_settings=accuracy_settings)
         self.worker.progress.connect(self.progress.setValue)
         self.worker.counter_update.connect(self.update_counter_vars)
         self.worker.status_msg.connect(self.update_status_label)
