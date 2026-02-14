@@ -89,11 +89,10 @@ Create a single file that runs without Python installed.
 
 ### Windows Build
 ```bash
-python -m Pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets;assets" --name PrismPaper main.py
-
+Pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets;assets" --name PrismPaper main.py
 ```
 ### Linux Build
 ```bash
-pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets:assets" --name PrismPaper main.py
+Pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets:assets" --name PrismPaper main.py
 ```
 The executable file will appear in the dist/ folder.
