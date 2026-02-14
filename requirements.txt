@@ -3,3 +3,4 @@ qtawesome
 numpy
 Pillow
 scikit-learn
+psutil
