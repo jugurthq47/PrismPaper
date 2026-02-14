@@ -2,7 +2,7 @@ import os
 import time
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
-    QFileDialog, QProgressBar, QMessageBox, QCheckBox
+    QFileDialog, QProgressBar, QMessageBox, QCheckBox, QComboBox
 )
 from PyQt6.QtGui import QAction, QIcon 
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
@@ -11,7 +11,7 @@ if HAS_ICONS:
     import qtawesome as qta
 
 from ui.widgets import DragDropLabel, StayOpenMenu
-from workers import SortWorker
+from workers import SortWorker, auto_low_power_mode
 
 class PrismPaperGUI(QWidget):
     def __init__(self):
@@ -55,6 +55,14 @@ class PrismPaperGUI(QWidget):
         self.copy_checkbox = QCheckBox(" Copy files (Safest option)")
         self.copy_checkbox.setChecked(True)
         settings_layout.addWidget(self.copy_checkbox)
+        
+        # Performance mode selector
+        mode_label = QLabel("Mode:")
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["Auto", "Performance", "Low Power"])
+        self.mode_combo.setToolTip("Auto: Detects based on system resources\nPerformance: Maximum speed\nLow Power: Minimal resource usage")
+        settings_layout.addWidget(mode_label)
+        settings_layout.addWidget(self.mode_combo)
         settings_layout.addStretch()
 
         self.color_btn = QPushButton("All Colors")
@@ -146,6 +154,11 @@ class PrismPaperGUI(QWidget):
             QPushButton[text*="Stop"] { background-color: #e63946; border: none; }
             QPushButton[text*="Stop"]:hover { background-color: #c92a37; }
             QCheckBox { spacing: 8px; color: #aaa; }
+            QComboBox { background-color: #333; color: #f0f0f0; border: 1px solid #444; border-radius: 6px; padding: 5px 10px; font-size: 10pt; }
+            QComboBox:hover { background-color: #444; border: 1px solid #555; }
+            QComboBox::drop-down { border: none; }
+            QComboBox::down-arrow { image: none; }
+            QComboBox QAbstractItemView { background-color: #2d2d2d; color: #f0f0f0; border: 1px solid #444; selection-background-color: #3a86ff; }
             QProgressBar { border: none; background-color: #333; border-radius: 3px; }
             QProgressBar::chunk { background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #3a86ff, stop:1 #80bfff); border-radius: 3px; }
             QMenu { background-color: #2d2d2d; color: #f0f0f0; border: 1px solid #444; }
@@ -259,9 +272,18 @@ class PrismPaperGUI(QWidget):
         self.timer.start(1000)
 
         copy_mode = self.copy_checkbox.isChecked()
-        target_colors = self.get_selected_colors() 
+        target_colors = self.get_selected_colors()
         
-        self.worker = SortWorker(self.input_dir, self.output_dir, copy_mode, files_list, target_colors)
+      
+        mode_selection = self.mode_combo.currentText()
+        if mode_selection == "Auto":
+            low_power = None 
+        elif mode_selection == "Low Power":
+            low_power = True
+        else:
+            low_power = False
+        
+        self.worker = SortWorker(self.input_dir, self.output_dir, copy_mode, files_list, target_colors, low_power_mode=low_power)
         self.worker.progress.connect(self.progress.setValue)
         self.worker.counter_update.connect(self.update_counter_vars)
         self.worker.status_msg.connect(self.update_status_label)
