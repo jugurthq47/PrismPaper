@@ -3,9 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)
 
-**PrismPaper** is a lightning-fast, multithreaded desktop application that organizes your wallpapers by their dominant color. Built with **PyQt6** and **K-Means Clustering**, it features a modern, drag-and-drop interface that works seamlessly on Windows and Linux (including tiling WMs like Hyprland).
-
-
+**PrismPaper** is a lightning-fast, multithreaded desktop application that organizes your wallpapers by their dominant color. Built with **PyQt6** and **K-Means Clustering**.
 
 ##  Features
 
