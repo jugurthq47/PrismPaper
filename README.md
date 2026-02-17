@@ -90,6 +90,6 @@ Pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets;asse
 ```
 ### Linux Build
 ```bash
-Pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets:assets" --name PrismPaper main.py
+pyinstaller --noconsole --onefile --icon=assets/icon.ico --add-data "assets:assets" --name PrismPaper main.py
 ```
 The executable file will appear in the /dist folder.
